@@ -17,7 +17,7 @@ A similar anomaly detection algorithm to consider implementing could be a one-cl
 The parameters of the data generated in this solution were sourced from a combination of observed online listings of popular fashion retailer 2nd Street and insider information provided by a colleague familiar with the company's operations.
 The structure of transaction data was modeled after consignment store point-of-sale (POS) software.
 Data was generated according to two predefined sets of behavior, legitimate and fraudulent (contamination), and then combined before model training and left unlabeled.
-All data was stored in PostgreSQL [though not necessary for the scope of the project] for its scalability and security in real-world applications.
+All data was stored in PostgreSQL for its scalability and security in real-world applications.
 Feature engineering was kept simple (days_between, profit_margin) to limit dimensionality of model input, prioritizing impact on key business metrics.
 
 ## Usage
