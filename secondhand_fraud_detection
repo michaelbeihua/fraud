@@ -1,0 +1,177 @@
+import pandas as pd
+import numpy as np
+from faker import Faker
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.ensemble import IsolationForest
+from sklearn.model_selection import GridSearchCV
+from datetime import timedelta, datetime
+import random
+import psycopg2
+
+fake = Faker()
+onehot_encoder = OneHotEncoder(handle_unknown='ignore')
+scaler = StandardScaler()
+
+brands = ["A BATHING APE", "A-COLD-WALL", "A.P.C.", "A.POC", "AAPE BY A BATHING APE", "ACNE STUDIOS", "Adidas", "Adidas×Yohji Yamamoto(Y-3)", "Advisory Board Crystals", "agnes b.", "ALBERTA FERRETTI", "Alexander Digenova", "Alexander McQueen", "Alexander Wang", "alice+olivia", "ALLSAINTS", "ALPHA INDUSTRIES", "ALR JORDAN", "AMBUSH", "ami", "and wander", "Andersson Bell", "ANGLOMANIA", "ANN DEMEULEMEESTER", "ANNA SUI", "ANONYMOUS CLUB", "ANREALAGE", "ARC'TERYX", "ARIS TATALOVICH", "ARMANI COLLEZIONI", "ASOS", "Axel Arigato", "azteca", "b.b.simon", "B.Stroy", "BALENCIAGA", "BALLY", "BALMAIN", "BAPE", "BARBARA BUI", "BARNEYS NEWYORK", "Barragan", "BEAMS", "BEATRICE", "beautiful people", "beauty:beast", "Bebe", "BED J.W.FORD", "Belstaff", "Ben Taverniti", "Berluti", "BERNHARD WILLHELM", "Bianca Chandon", "BILLIONAIRE BOYS CLUB", "BIRKENSTOCK", "Blackmeans", "bluemarine", "BODE", "BOTTEGA VENETA", "Brain Dead", "BRUNELLO CUCINELLI", "BUCK MASON", "BURBERRY", "buscemi", "BVLGARI", "byredo", "C.E (cav empt)", "C.P.COMPANY", "C2H4 LA", "cacharel", "CACTUS PLANT FLEA MARKET", "Calvin Klein", "Calvin Klein 205W39NYC", "camper", "CANADA GOOSE", "Carhartt", "CAROL CHRISTIAN POELL", "Cartier", "CASTELBAJAC", "CDG", "Celine", "CHAMPION", "CHANEL", "CHARLES JEFFREY LOVERBOY", "chen peng", "CHINATOWN MARKET", "Chloe", "Christian Audigier", "CHRISTIAN DADA", "Christian Dior", "Christian Louboutin", "CHRISTOPHER LEMAIRE", "CHROME HEARTS", "Church's", "Clarks", "CMMWEAR", "COACH", "CODY SANDERSON", "COLE HAAN", "collection PRIVEE", "Columbia", "COMME des GARCONS", "CONVERSE", "COOGI", "COOTIE", "COP.COPINE", "Coperni", "Courreges", "Craig green", "crocs", "cult gaia", "D&G", "dainese", "DAMIR DOMA", "DANSKO", "David Yurman", "DC SHOES", "DENIM TEARS", "DIANE von FURSTENBERG", "DICKIES", "diego della valle", "Diemme", "DIESEL", "DIET BUTCHER SLIM SKIN", "Dime", "Dion Lee", "Dior HOMME", "DIRK BIKKEMBERGS", "Disney", "divinity", "DKNY(DONNA KARAN NEW YORK)", "DOLCE&GABBANA", "doublet", "Dr.MARTENS", "DRIES VAN NOTEN", "DROLE DE MONSIEUR", "DSQUARED2", "dunhill", "EASTPAK", "ECKHAUS LATTA", "Ed Hardy", "EDDIE BAUER", "Eileen Fisher", "EMILIO PUCCI", "EMPORIO ARMANI", "enfants riches deprimes", "Engineered Garments", "ENTERPRISE JAPAN", "Eric Emanuel", "ERL", "ETRO", "Etudes", "EVISU", "eYe COMME des GARCONS JUNYA WATANABE MAN", "FACETASM", "Faith Connexion", "FEAR OF GOD", "FENDI", "feng chen wang", "FERRAGAMO", "FINAL HOME", "FOG by FEAR OF GOD", "FRED PERRY", "FUCT", "FUTURA LABORATORIES", "G-STAR RAW", "G.H.Bass&Co.", "galliano", "GANRYU", "GAP", "GAULTIER HOMME objet", "GAULTIER JEAN'S", "GCDS", "GENERALRESEARCH", "GENTLE MONSTER", "GEORG JENSEN", "GIANNI VERSACE", "Gianvito Rossi", "giorgio brato", "Girls Don't Cry", "Giuseppe ZANOTTI", "GIVENCHY", "GMBH", "goa", "GOLDEN GOOSE", "GOLF", "GOLF WANG", "Golfefleur", "GOOD ENOUGH", "Gosha Rubchinskiy", "GOYARD", "Grand Seiko", "GRATEFUL DEAD", "GREG LAUREN", "GRIFFIN", "GUCCI", "GUESS", "GUIDI", "GUILTY PARTIES", "Haider Ackermann", "HAMNETT", "Hanes", "HARLEY DAVIDSON", "Heaven By Marc Jacobs", "HELIOT EMIL", "hellokitty", "HELLSTAR", "HELMUT LANG", "Hender Scheme", "HENRIK VIBSKOV", "HERMES", "HERON PRESTON", "Herve Leger", "HI-TEC", "HOKA ONE ONE", "HOLLISTER", "HOMME PLISSE ISSEY MIYAKE", "HOOD BY AIR.", "HUBLOT", "HUF", "HUGO BOSS", "HUMAN MADE", "hussein chalayan", "HYEIN SEO", "HYOMA", "HYSTERIC GLAMOUR", "I.AM.GIA", "ICE CREAM", "ICEBERG", "inez", "ISABEL MARANT", "ISAMU KATAYAMA BACKLASH", "ISSEY MIYAKE", "J.W. Anderson", "JACQUEMUS", "Jaded london", "JAM HOME MADE", "Jean Paul Gaultier", "JEREMY SCOTT", "JIL SANDER", "JIMMY CHOO", "jitrois", "JJJJound", "jnco", "John Elliott", "John Galliano", "John Geiger", "JOHN LAWRENCE SULLIVAN", "John UNDERCOVER", "john varvatos", "Jordan", "JUICY COUTURE", "JULIUS", "JUNIOR GAULTIER", "JUNYA WATANABE COMME des GARCONS", "Just cavalli", "Juun.J", "Kansai Yamamoto", "Kapital", "KARL LAGERFELD", "kate spade new york", "katie may", "KAWS", "KENZO", "KEPLER LONDON", "khaite", "Kiko Kostadinov", "KITH", "ksubi", "L.L.Bean", "la provocazione", "LACOSTE", "LAD MUSICIAN", "Lafayette 148", "LANVIN", "LE GRAND BLEU", "Lee", "LEMAIRE", "LESPORTSAC", "Levi's", "LIMI feu", "LINDA FARROW", "LOEWE", "LONDON FOG", "LONGCHAMP", "LOUIS VUITTON", "LOVE MOSCHINO", "love shack fancy", "lucien pellat-finet", "lululemon", "M+RC NOIR", "ma julius", "MACKINTOSH", "Madhappy", "MAHARISHI", "MAISON KITSUNE", "Maison Margiela", "MANIERE DE VOIR", "MARC BY MARC JACOBS", "MARC JACOBS", "MARCELO BURLON COUNTY OF MILAN", "Margaret Howell", "Marine Serre", "MARITHE FRANCOIS GIRBAUD", "MARNI", "MARTINE ROSE", "Masons Forte Dei Marmi", "MASSIMO", "mastermind JAPAN", "mastermind world", "MAX MARA", "MCM", "McQ", "McQ Alexander McQueen", "mercibeaucoup，", "MERRELL", "MICHAEL KORS", "michel berandi", "MIDNIGHT STUDIOS", "Mihara Yasuhiro", "MILITARY", "MILK BOY", "MISBHV", "MISSONI", "MIU MIU", "MM6", "MNML", "MONCLER", "MONITALY", "mont-bell", "montblanc", "MOSCHINO", "Mountain Research", "MSCHF", "MUGLER", "n(n) BY NUMBER (N)INE", "N.HOOLYWOOD", "NAKED & FAMOUS DENIM", "naked wolfe", "NAMACHEKO", "NAUTICA", "Ne-net", "Needles", "NEIGHBORHOOD", "NEIL BARRETT", "NEPENTHES", "NEW BALANCE", "NEW ERA", "new rock", "NFL", "NIKE", "NINA RICCI", "NOAH NYC", "noir kei ninomiya", "Nordstrom", "NORMA KAMALI", "NUDIE JEANS", "NUMBER (N)INE", "OAKLEY", "OAMC(OVER ALL MASTER CLOTH)", "OCTOBERS VERY OWN(OVO)", "OFF-WHITE", "offcine generale", "OLIVER PEOPLES", "OMEGA", "Onitsuka Tiger", "Online Ceramics", "OPENING CEREMONY", "Original Fake", "OTTOLINGER", "OUR LEGACY", "oxford", "PACCBET", "paco rabanne", "PALACE", "PALM ANGELS", "PALOMA WOOL", "PARADOXE", "Pashmina", "patagonia", "Patou", "Paul Harnden", "Paul Smith", "paul stuart", "PAUL&JOE", "Pelle Pelle", "PENDLETON", "peter do", "PHENOMENON", "PHILIPP PLEIN", "PIERRE HARDY", "Places+Faces", "Plantation", "PLAY COMME des GARCONS", "PLAYBOY", "Pleasures", "PLEATS PLEASE ISSEY MIYAKE", "Poeme Bohemien", "POLO RALPH LAUREN", "POLO SPORT", "POST ARCHIVE FACTION", "PPFM", "PRADA", "PRADA SPORT", "Proposition", "Prps", "PS Paul Smith", "PSYCHWORLD", "Public School", "PUMA", "PURPLE BRAND", "PYER MOSS", "Pyrenex", "R13", "Rachel Comey", "RAF SIMONS", "rag & bone", "RALPH LAUREN", "Raspberry Hills", "Ray-Ban", "READYMADE", "REBECCA MINKOFF", "Rebuild by Needles", "Reebok", "REED KRAKOFF", "Reese Cooper", "Reformation", "reproduction of found", "RETROFETE", "RETROSUPERFUTURE", "Revenge", "RHC Ron Herman", "rhude", "Rick Owens", "RICK OWENS DRKSHDW", "RIMOWA", "ROBERT GELLER", "Roberto Cavalli", "RRL", "RYKIEL HOMME", "S Max Mara", "S.R.Studio.LA.CA", "Sacai", "sagittaire", "SAINT LAURENT", "SAINT MICHAEL", "SAKS FIFTH AVENUE", "SALEHE BEMBURY", "salomon", "Salvatore Ferragamo", "Sam Edelman", "Samantha Vega", "Sandro Paris", "SASQUATCH fabrix", "Sasquatchfabrix.", "SASSAFRAS", "SAUCONY", "Schott", "SEE BY CHLOE", "Semantic design", "sergio rossi", "Sergio Tacchini", "Seventh Heaven", "SEX POT REVENGE", "Sezane", "shayne oliver", "SIBERIA HILLS", "simone rocha", "Societe Anonyme", "sonia rykiel", "SONIC LAB", "SOPHNET.", "sp5der", "STONE ISLAND", "story mfg", "strawberry mansion", "STUART WEITZMAN", "STUDIO D'ARTISAN", "STUDIO NICHOLSON", "STUSSY", "suicoke", "SUNSEA", "Superdry", "SUPREME", "SWAGGER", "SWEAR", "TAKAHIROMIYASHITA The Soloist", "TALKING ABOUT THE ABSTRACTION", "tang fan", "Telfar", "TETE HOMME", "The Elder Statesman", "The guilty parties", "The Kooples", "THE NORTH FACE", "THE NORTH FACE PURPLE LABEL", "THE ROW", "The Viridi-anne", "theory", "Thierry Mugler", "THOM BROWNE", "THOM BROWNE. NEW YORK", "TIFFANY&Co.", "TIM COPPENS", "Timberland", "TOD'S", "TODD SNYDER", "TOM FORD", "TOMMY HILFIGER", "TORNADO MART", "TORY BURCH", "TRUE RELIGION", "TRUSSARDI", "TSUMORI CHISATO", "ugg", "uma wang", "UNDEFEATED", "UNDER ARMOUR", "UNDERCOVER", "UNIQLO", "UNITED ARROWS", "vagabond", "vale", "VALENTINO", "VANS", "VANSON", "VEJA", "VERONICA BEARD", "VERSACE", "VERSUS VERSACE", "VETEMENTS", "Vintage", "visvim", "VIVIENNE TAM", "VIVIENNE WESTWOOD", "VLONE", "VonDutch", "VUJA DE", "W)taps", "W.&L.T", "W.&L.T.", "WACKO MARIA", "WALES BONNER", "Walls", "walter baker", "Walter Van Beirendonck", "WARREN LOTAS", "White house Cox", "WHITE MOUNTAINEERING", "WILDTHINGS", "wings+horns", "wooyoungmi", "WTAPS", "X-girl", "XANDER ZHOU", "Y's for men", "Y-3", "Y/Project", "Yang Li", "YEEZY", "YMC", "YOHJI YAMAMOTO", "yohji yamamoto POUR HOMME", "YOSHIYUKI KONISHI", "yume yume", "YVES SAINT LAURENT", "Zadig&Voltaire", "ZARA", "Zimmermann", "ZUCCa", "1017 ALYX 9SM(ALYX)", "10sei0otto", "11 By Boris Bidjan Saberi", "14th Addiction", 20471120, "3.1 Phillip Lim", "424(FourTwoFour)", "5351 POUR LES FEMMES", "5351 POUR LES HOMMES", "99%IS-"]
+categories = ["Tanks", "T-Shirts", "Shirts", "Sweatshirts & Hoodies", "Sweaters & Cardigans", "Vests, Jeans", "Pants", "Sweatpants & Joggers", "Utility & Cargo, Shorts", "Trousers", "Skirts", "Jumpsuits", "Overalls", "Sleeveless Dresses", "Short Sleeve Dresses", "Long Sleeve Dresses", "Trench Coats, Outdoor", "Denim Jackets, Jackets", "Down & Puffers", "Leather Jackets", "Blazers", "Peacoats", "Suits", "Matching Sets", "Sneakers", "Loafers & Slip-Ons", "Lace Ups & Oxfords", "Boots", "Sandals", "Backpacks", "Briefcases", "Crossbodies", "Duffles", "Fanny Packs", "Pouches", "Totes", "Belts", "Caps & Hats", "Jewelry", "Scarves", "Sunglasses & Eyewear", "Ties", "Wallets & Card Cases", "Watches"]
+colors = ["black", "white", "red", "blue", "yellow", "green", "orange", "pink", "purple", "brown", "grey"]
+sizes = ["XS", "S", "M", "L", "XL"]
+quantities = [1,2,3,4,5]
+legit_quantity_weights = [0.8, 0.1, 0.05, 0.03, 0.02]
+fraud_quantity_weights = [0.7, 0.2, 0.05, 0.03, 0.02]
+
+def generate_employees(num_employees):
+    employees = {fake.first_name(): 0.1 for _ in range(num_employees)}
+    high_risk_employee = random.choice(list(employees.keys()))
+    employees[high_risk_employee] = 0.7
+    total = sum(employees.values())
+    normalized_employees = {k: v / total for k, v in employees.items()} #normalization
+    return normalized_employees
+
+num_employees = random.randint(3, 9)
+employee_distribution = generate_employees(num_employees)
+employees_list = list(employee_distribution.keys())
+
+
+def generate_legit_data(num_records):
+    data = []
+    for _ in range(num_records):
+
+        price_bought = round(np.random.lognormal(4.4, 0.9))
+        price_sold = round(price_bought * random.uniform(0.9, 2.7), 2)
+        date_bought = fake.date_between(start_date='-2y', end_date='today')
+        date_sold = fake.date_between(start_date=date_bought, end_date='today')
+
+        record = {
+            'transaction_id': fake.uuid4(),
+            'employee_id': random.choice(employees_list),
+            'brand': random.choice(brands),
+            'category': random.choice(categories),
+            'color': random.choice(colors),
+            'size': random.choice(sizes),
+            'quantity': random.choices(quantities, legit_quantity_weights)[0],
+            'price_bought': price_bought,
+            'price_sold': price_sold,
+            'date_bought': date_bought,
+            'date_sold': date_sold
+        }
+        data.append(record)
+    return data
+
+def generate_fraud_data(num_records, employee_distribution):
+    data = []
+    for _ in range(num_records):
+        employee_id = random.choices(list(employee_distribution.keys()), weights=list(employee_distribution.values()), k=1)[0]
+
+        price_bought = round(np.random.lognormal(3.9, 0.9))
+        price_sold = round(price_bought * random.uniform(0.8, 1.2), 2)
+        date_bought = fake.date_between(start_date='-2y', end_date='today')
+        date_sold = fake.date_between(start_date=date_bought, end_date='today') + timedelta(days=random.randint(10, 60))
+
+        record = {
+            'transaction_id': fake.uuid4(),
+            'employee_id': employee_id,
+            'brand': random.choice(brands),
+            'category': random.choice(categories),
+            'color': random.choice(colors),
+            'size': random.choice(sizes),
+            'quantity': random.choices(quantities, fraud_quantity_weights)[0],
+            'price_bought': price_bought,
+            'price_sold': price_sold,
+            'date_bought': date_bought,
+            'date_sold': date_sold
+        }
+        data.append(record)
+    return data
+
+legit_data = generate_legit_data(4000)
+fraud_data = generate_fraud_data(50, employee_distribution)
+
+conn = psycopg2.connect(
+    dbname="postgres",
+    user="postgres",
+    password="password",
+    host="localhost",
+    port="5432"
+)
+cursor = conn.cursor()
+
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS transactions (
+        transaction_id UUID PRIMARY KEY,
+        employee_id TEXT,
+        brand TEXT,
+        category TEXT,
+        color TEXT,
+        size TEXT,
+        quantity INTEGER,
+        price_bought REAL,
+        price_sold REAL,
+        date_bought DATE,
+        date_sold DATE
+    );
+''')
+conn.commit()
+
+all_data = legit_data + fraud_data
+
+for record in all_data:
+    cursor.execute('''
+        INSERT INTO transactions (
+            transaction_id, employee_id, brand, category, color, size, quantity, price_bought, price_sold, date_bought, date_sold
+        ) VALUES (
+            %(transaction_id)s, %(employee_id)s, %(brand)s, %(category)s, %(color)s, %(size)s, %(quantity)s, %(price_bought)s, %(price_sold)s, %(date_bought)s, %(date_sold)s
+        )
+    ''', record)
+
+conn.commit()
+
+#train
+df = pd.DataFrame(all_data)
+
+df['date_bought'] = pd.to_datetime(df['date_bought'])
+df['date_sold'] = pd.to_datetime(df['date_sold'])
+df['days_between'] = (df['date_sold'] - df['date_bought']).dt.days
+df['profit_percentage'] = (df['price_sold'] / df['price_bought']) - 1
+
+#test
+cursor.execute("SELECT * FROM test_transactions")
+rows = cursor.fetchall()
+columns = ['transaction_id', 'employee_id', 'brand', 'category', 'color', 'size', 'quantity', 'price_bought', 'price_sold', 'date_bought', 'date_sold']
+test_df = pd.DataFrame(data=rows, columns=columns) 
+
+test_df['date_bought'] = pd.to_datetime(test_df['date_bought'])
+test_df['date_sold'] = pd.to_datetime(test_df['date_sold'])
+test_df['days_between'] = (test_df['date_sold'] - test_df['date_bought']).dt.days
+test_df['profit_percentage'] = (test_df['price_sold'] / test_df['price_bought']) - 1
+
+all_employee_ids = pd.concat([df['employee_id'], test_df['employee_id']])
+onehot_encoder.fit(all_employee_ids.values.reshape(-1, 1))
+encoded_train_employee_ids = onehot_encoder.transform(df[['employee_id']]).toarray()
+encoded_test_employee_ids = onehot_encoder.transform(test_df[['employee_id']]).toarray()
+
+encoded_train_employee_ids_df = pd.DataFrame(encoded_train_employee_ids, index=df.index, columns=onehot_encoder.get_feature_names_out(['employee_id']))
+encoded_test_employee_ids_df = pd.DataFrame(encoded_test_employee_ids, index=test_df.index, columns=onehot_encoder.get_feature_names_out(['employee_id']))
+
+df = df.drop(columns=['employee_id']).join(encoded_train_employee_ids_df)
+test_df = test_df.drop(columns=['employee_id']).join(encoded_test_employee_ids_df)
+
+features = ['price_bought', 'price_sold', 'days_between', 'profit_percentage'] + list(encoded_train_employee_ids_df.columns)
+
+X = df[features]
+X_scaled = scaler.fit_transform(X)
+
+model = IsolationForest(n_estimators=100, contamination='auto', random_state=42)
+model.fit(X_scaled)
+
+#test
+X_test = test_df[features]
+X_test_scaled = scaler.fit_transform(X_test)
+
+anomaly_scores = model.predict(X_test_scaled)
+
+test_df['anomaly_score'] = anomaly_scores
+print(test_df)
+
+cursor.close()
+conn.close()
