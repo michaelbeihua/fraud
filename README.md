@@ -22,4 +22,4 @@ Feature engineering was kept simple (days_between, profit_margin) to limit dimen
 
 ## Usage
 
-python secondhand_fraud_detection.py
+```python secondhand_fraud_detection.py```
