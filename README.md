@@ -1,6 +1,6 @@
-# Secondhand Fraud Detection
+# Consignment Fraud Detection
 
-The buy-sell-trade retail model is vulnerable to insider fraud when employees exploit knowledge of a company's buying and pricing policy to arbitrage personal items at the business's expense.
+The buy-sell-trade retail model is vulnerable to insider fraud when employees exploit a company's buying and pricing procedures to arbitrage personal items at the business's expense.
 This project is a Python-based machine learning tool designed to identify potential insider fraud by using an isolation forest algorithm to spot anomalies in resale/consignment transactions data.
 
 ## Algorithm
@@ -22,4 +22,4 @@ Feature engineering was kept simple (days_between, profit_margin) to limit dimen
 
 ## Usage
 
-```python secondhand_fraud_detection.py```
+```terminal python secondhand_fraud_detection.py```
